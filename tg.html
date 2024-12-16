@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lowongan Kerja</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center text-primary">Lowongan Kerja</h2>
+
+        <table class="table table-bordered mb-4">
+            <thead class="thead-dark">
+                <tr>
+                    <th>No</th>
+                    <th>Nama Perusahaan</th>
+                    <th>Posisi</th>
+                    <th>Lokasi</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabelLowongan"></tbody>
+        </table>
+
+        <div class="form-group mb-4">
+            <input type="text" id="searchQuery" class="form-control" placeholder="Cari lowongan kerja..." />
+        </div>
+        <button class="btn btn-info mb-4" onclick="searchData()">Cari</button>
+
+        <form id="formLowongan" class="mb-4">
+            <input type="hidden" id="kodeHidden">
+            <div class="form-group">
+                <label for="kode">No</label>
+                <input type="text" id="kode" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="namaPerusahaan">Nama Perusahaan</label>
+                <input type="text" id="namaPerusahaan" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="posisi">Posisi</label>
+                <input type="text" id="posisi" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="lokasi">Lokasi</label>
+                <input type="text" id="lokasi" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <input type="text" id="status" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+        </form>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzJeFqVQoLi9PLNEB1qzafJcHwVj6bDQKIJc5cX-s1Mh71UHUMr27YLsLv5oMmulmopGA/exec';
+
+        function loadLowongan() {
+            $.get(scriptURL + '?action=read', function (data) {
+                const tableBody = $('#tabelLowongan');
+                tableBody.empty();
+                data.forEach(item => {
+                    tableBody.append(`
+                        <tr>
+                            <td>${item.No}</td>
+                            <td>${item.NamaPerusahaan}</td>
+                            <td>${item.Posisi}</td>
+                            <td>${item.Lokasi}</td>
+                            <td>${item.Status}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editData('${item.No}')">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteData('${item.No}')">Hapus</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }, 'json');
+        }
+
+        function searchData() {
+            const query = $('#searchQuery').val();
+            $.get(scriptURL + '?action=search&query=' + query, function (data) {
+                const tableBody = $('#tabelLowongan');
+                tableBody.empty();
+                data.forEach(item => {
+                    tableBody.append(`
+                        <tr>
+                            <td>${item.No}</td>
+                            <td>${item.NamaPerusahaan}</td>
+                            <td>${item.Posisi}</td>
+                            <td>${item.Lokasi}</td>
+                            <td>${item.Status}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editData('${item.No}')">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteData('${item.No}')">Hapus</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }, 'json');
+        }
+
+        function deleteData(no) {
+            if (confirm('Yakin ingin menghapus data?')) {
+                $.get(scriptURL + '?action=delete&no=' + no, function (response) {
+                    alert(response.result);
+                    loadLowongan();
+                }, 'json');
+            }
+        }
+
+        function editData(no) {
+            $.get(scriptURL + '?action=read', function (data) {
+                const item = data.find(i => i.No == no);
+                if (item) {
+                    $('#kode').val(item.No);
+                    $('#namaPerusahaan').val(item.NamaPerusahaan);
+                    $('#posisi').val(item.Posisi);
+                    $('#lokasi').val(item.Lokasi);
+                    $('#status').val(item.Status);
+                    $('#kodeHidden').val(item.No);
+                }
+            }, 'json');
+        }
+
+        $('#formLowongan').submit(function (event) {
+            event.preventDefault();
+            const kode = $('#kode').val();
+            const namaPerusahaan = $('#namaPerusahaan').val();
+            const posisi = $('#posisi').val();
+            const lokasi = $('#lokasi').val();
+            const status = $('#status').val();
+
+            const action = $('#kodeHidden').val() ? 'update' : 'create';
+            const data = {
+                action: action,
+                no: kode,
+                namaPerusahaan: namaPerusahaan,
+                posisi: posisi,
+                lokasi: lokasi,
+                status: status
+            };
+
+            $.get(scriptURL, data, function (response) {
+                alert(response.result);
+                loadLowongan();
+                $('#formLowongan')[0].reset();
+            }, 'json');
+        });
+
+        loadLowongan();
+    </script>
+</body>
+
+</html>
